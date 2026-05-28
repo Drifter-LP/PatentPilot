@@ -5,7 +5,7 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.config import DEEPSEEK_API_KEY
+from src.config import get_deepseek_api_key
 
 SPLASH_HTML_PATH = Path(__file__).parent / "web" / "patentpilot_splash.html"
 # 开场主内容区距视口顶部的距离（vh）；通过 fixed 定位生效
@@ -1204,13 +1204,13 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        api_key = DEEPSEEK_API_KEY or ""
+        api_key = get_deepseek_api_key()
         with st.expander("⚙️ Settings"):
             api_key = st.text_input(
                 "DeepSeek API Key",
                 value=api_key,
                 type="password",
-                help="可在 .env 中设置 DEEPSEEK_API_KEY",
+                help="本地用 .env；Streamlit Cloud 在 App Settings → Secrets 配置",
             )
 
     has_result = ("idea_result" in st.session_state) or ("research_result" in st.session_state)

@@ -4,20 +4,23 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from src.config import DEEPSEEK_API_KEY, DEEPSEEK_API_URL, DEEPSEEK_MODEL
+from src.config import get_deepseek_api_key, get_deepseek_api_url, get_deepseek_model
 
 
 class DeepSeekClient:
     def __init__(self, api_key: str | None = None, api_url: str | None = None):
-        self.api_key = api_key or DEEPSEEK_API_KEY
-        self.api_url = api_url or DEEPSEEK_API_URL
+        self.api_key = api_key or get_deepseek_api_key()
+        self.api_url = api_url or get_deepseek_api_url()
 
     def chat(self, system_prompt: str, user_prompt: str) -> str:
         if not self.api_key:
-            raise ValueError("未配置 API Key，请在侧边栏输入或设置环境变量 DEEPSEEK_API_KEY。")
+            raise ValueError(
+                "未配置 API Key，请在 Streamlit Secrets、侧边栏 Settings "
+                "或环境变量 DEEPSEEK_API_KEY 中设置。"
+            )
 
         payload: dict[str, Any] = {
-            "model": DEEPSEEK_MODEL,
+            "model": get_deepseek_model(),
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
