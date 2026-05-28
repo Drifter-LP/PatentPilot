@@ -6,15 +6,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from src.config import DEEPSEEK_API_KEY
-from src.ui.analysis_progress import run_with_progress
-from src.services.analyzer import PatentAnalyzer
-from src.ui.dashboard import render_analysis_dashboard
 
 SPLASH_HTML_PATH = Path(__file__).parent / "web" / "patentpilot_splash.html"
 # 开场主内容区距视口顶部的距离（vh）；通过 fixed 定位生效
 SPLASH_TOP_OFFSET_VH = 33
 st.set_page_config(
-    page_title="PatentPilot Demo",
+    page_title="PatentPilot",
     page_icon="🧭",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -1310,6 +1307,8 @@ def main() -> None:
                     st.warning("请先输入内容再开始分析。")
                 else:
                     try:
+                        from src.services.analyzer import PatentAnalyzer
+                        from src.ui.analysis_progress import run_with_progress
 
                         def _call_analyzer() -> dict:
                             analyzer = PatentAnalyzer(api_key=api_key or None)
@@ -1339,6 +1338,8 @@ def render_idea_result(result: dict) -> None:
         st.error("分析结果解析失败")
         st.text_area("原始返回", result.get("raw_response", ""), height=200)
         return
+    from src.ui.dashboard import render_analysis_dashboard
+
     render_analysis_dashboard(
         result,
         mode="idea",
@@ -1352,6 +1353,8 @@ def render_research_result(result: dict) -> None:
         st.error("分析结果解析失败")
         st.text_area("原始返回", result.get("raw_response", ""), height=200)
         return
+    from src.ui.dashboard import render_analysis_dashboard
+
     render_analysis_dashboard(
         result,
         mode="research",
