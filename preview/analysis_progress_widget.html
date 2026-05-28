@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatentPilot — 分析进度条预览</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 20px;
+    }
+    .demo-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 420px;
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+    }
+    .demo-panel h1 { font-size: 1.1rem; margin-bottom: 8px; }
+    .demo-panel p { font-size: 0.85rem; color: #6b7280; margin-bottom: 16px; }
+    .demo-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .demo-btn {
+      background: #14b8a6;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .demo-btn.secondary {
+      background: #fff;
+      color: #0a0a0a;
+      border: 1px solid #e5e7eb;
+    }
+    .demo-btn:hover { filter: brightness(0.95); }
+    .demo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .pp-progress-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .pp-progress-backdrop.is-open { display: flex; }
+    .pp-progress-card {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.18);
+      padding: 22px 24px 20px;
+    }
+    .pp-progress-brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #0a0a0a;
+      line-height: 1.2;
+      margin: 0 0 14px 0;
+    }
+    .pp-progress-brand span { color: #14b8a6; }
+    .pp-progress-pct {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #0a0a0a;
+      margin-bottom: 8px;
+    }
+    .pp-progress-track {
+      height: 10px;
+      background: #f3f4f6;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .pp-progress-fill {
+      height: 100%;
+      width: 33%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #0d9488, #14b8a6, #2dd4bf);
+      transition: width 0.35s ease;
+      box-shadow: 0 0 12px rgba(20, 184, 166, 0.45);
+    }
+    .pp-progress-steps { list-style: none; border-top: 1px solid #f3f4f6; padding-top: 12px; }
+    .pp-progress-steps li {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      padding: 4px 0 4px 22px;
+      position: relative;
+    }
+    .pp-progress-steps li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e5e7eb;
+    }
+    .pp-progress-steps li.done { color: #0d9488; font-weight: 500; }
+    .pp-progress-steps li.done::before { background: #14b8a6; }
+    .pp-progress-steps li.active { color: #0a0a0a; font-weight: 600; }
+    .pp-progress-steps li.active::before {
+      background: #14b8a6;
+      animation: pulse 1.2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(20,184,166,0.5); }
+      50% { box-shadow: 0 0 0 6px rgba(20,184,166,0); }
+    }
+    .done-toast {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f766e;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      z-index: 10000;
+    }
+    .done-toast.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="demo-panel">
+    <h1>分析进度条 · 预览</h1>
+    <p>已按开场页样式调整品牌字与版面。</p>
+    <div class="demo-actions">
+      <button type="button" class="demo-btn secondary" id="previewBtn">查看 33% 快照</button>
+      <button type="button" class="demo-btn" id="startBtn">▶ 模拟发送分析</button>
+    </div>
+  </div>
+
+  <div class="pp-progress-backdrop is-open" id="backdrop" aria-hidden="false">
+    <div class="pp-progress-card">
+      <p class="pp-progress-brand">Patent<span>Pilot</span></p>
+      <span class="pp-progress-pct" id="pct">33%</span>
+      <div class="pp-progress-track">
+        <div class="pp-progress-fill" id="fill"></div>
+      </div>
+      <ul class="pp-progress-steps" id="steps">
+        <li data-cap="12">正在解析您的输入…</li>
+        <li data-cap="28">正在连接 DeepSeek…</li>
+        <li data-cap="48">正在分析技术领域与创新性…</li>
+        <li data-cap="68">正在评估专利潜力与竞争态势…</li>
+        <li data-cap="86">正在生成仪表盘数据…</li>
+        <li data-cap="96">即将完成…</li>
+      </ul>
+    </div>
+  </div>
+  <div class="done-toast" id="toast">分析完成 — 将跳转到仪表盘</div>
+
+  <script>
+    const stages = [12, 28, 48, 68, 86, 96];
+    const backdrop = document.getElementById("backdrop");
+    const fill = document.getElementById("fill");
+    const pctEl = document.getElementById("pct");
+    const steps = document.querySelectorAll("#steps li");
+    const toast = document.getElementById("toast");
+    const startBtn = document.getElementById("startBtn");
+    const previewBtn = document.getElementById("previewBtn");
+
+    function updateUI(p) {
+      fill.style.width = p + "%";
+      pctEl.textContent = Math.round(p) + "%";
+      steps.forEach((li) => {
+        const cap = Number(li.dataset.cap);
+        li.classList.remove("done", "active");
+        if (p >= cap) li.classList.add("done");
+        else if (p >= cap - 15) li.classList.add("active");
+      });
+    }
+
+    previewBtn.addEventListener("click", () => {
+      backdrop.classList.add("is-open");
+      updateUI(33);
+    });
+
+    startBtn.addEventListener("click", () => {
+      startBtn.disabled = true;
+      previewBtn.disabled = true;
+      backdrop.classList.add("is-open");
+      let p = 0;
+      const iv = setInterval(() => {
+        p += Math.random() * 4 + 1.5;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(iv);
+          updateUI(100);
+          backdrop.classList.remove("is-open");
+          toast.classList.add("show");
+          startBtn.disabled = false;
+          previewBtn.disabled = false;
+          setTimeout(() => toast.classList.remove("show"), 2800);
+        } else {
+          updateUI(Math.min(p, 96));
+        }
+      }, 380);
+    });
+
+    updateUI(33);
+  </script>
+</body>
+</html>

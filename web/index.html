@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatentPilot Demo</title>
+  <style>
+    :root {
+      --background: 0 0% 96%;
+      --foreground: 0 0% 4%;
+      --card: 0 0% 100%;
+      --card-foreground: 0 0% 4%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 0 0% 4%;
+      --primary: 174 72% 40%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 0 0% 93%;
+      --secondary-foreground: 0 0% 9%;
+      --muted: 0 0% 93%;
+      --muted-foreground: 0 0% 45%;
+      --accent: 174 72% 40%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 84% 60%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 0 0% 90%;
+      --input: 0 0% 90%;
+      --ring: 174 72% 40%;
+      --radius: 0.75rem;
+      --primary-dark: 174 72% 32%;
+      --info-bg: 174 40% 94%;
+      --info-text: 174 72% 28%;
+      --success-bg: 174 45% 92%;
+      --success-text: 174 72% 28%;
+    }
+
+    .dark {
+      --background: 0 0% 7%;
+      --foreground: 0 0% 96%;
+      --card: 0 0% 10%;
+      --card-foreground: 0 0% 96%;
+      --popover: 0 0% 10%;
+      --popover-foreground: 0 0% 96%;
+      --primary: 174 72% 45%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 0 0% 15%;
+      --secondary-foreground: 0 0% 96%;
+      --muted: 0 0% 15%;
+      --muted-foreground: 0 0% 60%;
+      --accent: 174 72% 45%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 62% 30%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 0 0% 18%;
+      --input: 0 0% 18%;
+      --ring: 174 72% 45%;
+      --primary-dark: 174 72% 38%;
+      --info-bg: 174 30% 16%;
+      --info-text: 174 55% 72%;
+      --success-bg: 174 35% 14%;
+      --success-text: 174 55% 72%;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) {
+        --background: 0 0% 7%;
+        --foreground: 0 0% 96%;
+        --card: 0 0% 10%;
+        --card-foreground: 0 0% 96%;
+        --popover: 0 0% 10%;
+        --popover-foreground: 0 0% 96%;
+        --primary: 174 72% 45%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 15%;
+        --secondary-foreground: 0 0% 96%;
+        --muted: 0 0% 15%;
+        --muted-foreground: 0 0% 60%;
+        --accent: 174 72% 45%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 62% 30%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 18%;
+        --input: 0 0% 18%;
+        --ring: 174 72% 45%;
+        --primary-dark: 174 72% 38%;
+        --info-bg: 174 30% 16%;
+        --info-text: 174 55% 72%;
+        --success-bg: 174 35% 14%;
+        --success-text: 174 55% 72%;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: hsl(var(--card));
+      border-right: 1px solid hsl(var(--border));
+      padding: 24px 20px;
+    }
+    .sidebar h1 { font-size: 1.25rem; margin: 0 0 4px; color: hsl(var(--foreground)); }
+    .sidebar p { color: hsl(var(--muted-foreground)); font-size: 0.9rem; margin: 0 0 20px; }
+    .mode-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .mode-btn.active {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--secondary));
+      color: hsl(var(--primary-dark));
+      font-weight: 600;
+      box-shadow: 0 0 0 1px hsl(var(--ring));
+    }
+    .main { padding: 32px 40px; }
+    .title { font-size: 2rem; font-weight: 700; margin: 0 0 8px; color: hsl(var(--foreground)); }
+    .subtitle { color: hsl(var(--muted-foreground)); margin: 0 0 28px; }
+    .panel {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+  .panel h2 { margin-top: 0; font-size: 1.2rem; }
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 14px;
+      border: 1px solid hsl(var(--input));
+      border-radius: var(--radius);
+      font-size: 1rem;
+      resize: vertical;
+      font-family: inherit;
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+    }
+    textarea:focus {
+      outline: none;
+      border-color: hsl(var(--ring));
+      box-shadow: 0 0 0 1px hsl(var(--ring));
+    }
+    .actions { margin-top: 16px; }
+    button.primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+    }
+    button.primary:hover { background: hsl(var(--primary-dark)); }
+    button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .hidden { display: none; }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .score-card {
+      background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+      color: hsl(var(--primary-foreground));
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+    }
+    .score-value { font-size: 2.8rem; font-weight: 700; line-height: 1; }
+    .score-label { margin-top: 8px; opacity: 0.9; }
+    .info-box {
+      background: hsl(var(--info-bg));
+      color: hsl(var(--info-text));
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border: 1px solid hsl(var(--border));
+    }
+    .success-box {
+      background: hsl(var(--success-bg));
+      color: hsl(var(--success-text));
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border: 1px solid hsl(var(--border));
+    }
+    .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+    .loading { color: hsl(var(--muted-foreground)); }
+    .error {
+      color: hsl(var(--destructive));
+      background: hsl(var(--destructive) / 0.12);
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid hsl(var(--destructive) / 0.25);
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .result-grid, .columns { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h1>🧭 PatentPilot</h1>
+      <p>AI 创新成果专利导航系统</p>
+      <button class="mode-btn active" data-mode="idea">💡 Idea Mode</button>
+      <button class="mode-btn" data-mode="research">🔬 Research Mode</button>
+      <p style="margin-top:24px;font-size:0.85rem;color:var(--muted);">
+        Demo 基于 LLM 做解释型分析，不连接真实专利库。
+      </p>
+    </aside>
+
+    <main class="main">
+      <h1 class="title">PatentPilot Demo</h1>
+      <p class="subtitle">在申请专利前，快速评估创新方向的潜在价值与风险</p>
+
+      <section id="idea-panel" class="panel">
+        <h2>💡 Idea Mode — 创新 Idea 分析</h2>
+        <textarea id="idea-input" placeholder="例如：AI 智能垃圾分类机器人"></textarea>
+        <div class="actions">
+          <button class="primary" id="idea-analyze">开始分析</button>
+        </div>
+      </section>
+
+      <section id="research-panel" class="panel hidden">
+        <h2>🔬 Research Mode — 科研成果分析</h2>
+        <textarea id="research-input" placeholder="粘贴论文摘要、科研成果简介或项目描述..."></textarea>
+        <div class="actions">
+          <button class="primary" id="research-analyze">开始分析</button>
+        </div>
+      </section>
+
+      <section id="result-panel" class="panel hidden">
+        <h2>分析结果</h2>
+        <div id="result-content"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let currentMode = "idea";
+
+    document.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentMode = btn.dataset.mode;
+        document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("idea-panel").classList.toggle("hidden", currentMode !== "idea");
+        document.getElementById("research-panel").classList.toggle("hidden", currentMode !== "research");
+        document.getElementById("result-panel").classList.add("hidden");
+      });
+    });
+
+    function renderList(title, items) {
+      const list = (items || []).map((item) => `<li>${item}</li>`).join("");
+      return `<div><strong>${title}</strong><ul>${list || "<li>暂无</li>"}</ul></div>`;
+    }
+
+    function renderIdeaResult(data) {
+      const crowding = data.innovation_crowding || {};
+      return `
+        <div class="result-grid">
+          <div class="score-card">
+            <div class="score-value">${data.patent_potential_score ?? "—"}</div>
+            <div class="score-label">专利潜力评分 / 100</div>
+          </div>
+          <div>
+            <div class="info-box"><strong>技术领域</strong><br>${data.technical_field || "—"}</div>
+            <div class="info-box"><strong>创新拥挤度：${crowding.level || "—"}</strong><br>${crowding.explanation || ""}</div>
+          </div>
+        </div>
+        <div class="columns">
+          ${renderList("潜在风险", data.potential_risks)}
+          ${renderList("可突破方向", data.breakthrough_directions)}
+        </div>
+        <div style="margin-top:20px;"><strong>总体结论</strong><div class="success-box">${data.summary || "—"}</div></div>
+      `;
+    }
+
+    function renderResearchResult(data) {
+      return `
+        <div class="result-grid">
+          <div class="score-card">
+            <div class="score-value">${data.patent_potential_score ?? "—"}</div>
+            <div class="score-label">专利潜力评分 / 100</div>
+          </div>
+          <div>
+            <div class="info-box"><strong>专利化潜力等级</strong><br>${data.has_patent_potential || "—"}</div>
+          </div>
+        </div>
+        <div class="info-box"><strong>创新性分析</strong><br>${data.innovation_analysis || "—"}</div>
+        <div class="info-box" style="margin-top:12px;"><strong>风险与不足分析</strong><br>${data.risk_analysis || "—"}</div>
+        ${renderList("建议方向", data.recommended_directions)}
+        <div style="margin-top:20px;"><strong>总体结论</strong><div class="success-box">${data.summary || "—"}</div></div>
+      `;
+    }
+
+    async function analyze(mode, content, button) {
+      if (!content.trim()) {
+        alert("请先输入内容");
+        return;
+      }
+
+      button.disabled = true;
+      const resultPanel = document.getElementById("result-panel");
+      const resultContent = document.getElementById("result-content");
+      resultPanel.classList.remove("hidden");
+      resultContent.innerHTML = '<p class="loading">正在调用 DeepSeek 分析，请稍候...</p>';
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, content }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "分析失败");
+
+        if (payload.parse_error) {
+          resultContent.innerHTML = `<div class="error">模型返回格式异常</div><pre>${payload.raw_response || ""}</pre>`;
+          return;
+        }
+
+        resultContent.innerHTML = mode === "idea"
+          ? renderIdeaResult(payload)
+          : renderResearchResult(payload);
+      } catch (err) {
+        resultContent.innerHTML = `<div class="error">${err.message}</div>`;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById("idea-analyze").addEventListener("click", (e) => {
+      analyze("idea", document.getElementById("idea-input").value, e.target);
+    });
+
+    document.getElementById("research-analyze").addEventListener("click", (e) => {
+      analyze("research", document.getElementById("research-input").value, e.target);
+    });
+  </script>
+</body>
+</html>

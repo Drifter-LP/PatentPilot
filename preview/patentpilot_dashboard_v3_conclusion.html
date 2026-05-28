@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PatentPilot — 仪表盘 v3 结论区预览</title>
+  <style>
+    :root {
+      --teal: #14b8a6;
+      --teal-dark: #0d9488;
+      --teal-deep: #0f766e;
+      --bg: #f0f2f5;
+      --text: #0a0a0a;
+      --text-muted: #6b7280;
+      --text-dim: #9ca3af;
+      --border: #e5e7eb;
+      --radius: 16px;
+      --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 260px; background: #1a1a1a; color: #fff; padding: 20px 16px;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-brand { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
+    .sidebar-brand span { color: var(--teal); }
+    .new-btn {
+      background: var(--teal); color: #fff; border: none; padding: 10px 16px;
+      border-radius: 12px; font-weight: 600; margin-bottom: 24px; width: 100%;
+    }
+    .section-title {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim); margin-bottom: 10px; padding-left: 8px;
+    }
+    .mode-item { padding: 10px 12px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 4px; }
+    .mode-item.active { background: rgba(20,184,166,0.15); color: var(--teal); }
+    .sidebar-footer {
+      margin-top: auto; font-size: 0.75rem; color: #6b7280;
+      padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .main { flex: 1; min-width: 0; overflow: auto; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px; border-bottom: 1px solid var(--border);
+      background: rgba(240,242,245,0.9);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+    .back-btn {
+      padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border);
+      background: #fff; font-size: 0.875rem; font-weight: 500; text-decoration: none; color: var(--text);
+    }
+    .topbar-title { font-size: 1.125rem; font-weight: 600; }
+    .topbar-title span { color: var(--text-muted); font-weight: 400; font-size: 0.9rem; margin-left: 8px; }
+    .mode-pill {
+      padding: 6px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+      background: rgba(20,184,166,0.1); color: var(--teal-dark);
+      border: 1px solid rgba(20,184,166,0.35);
+    }
+    .preview-banner {
+      margin: 12px 28px 0; padding: 10px 14px;
+      background: rgba(20,184,166,0.08); border: 1px dashed rgba(20,184,166,0.4);
+      border-radius: 10px; font-size: 0.8rem; color: var(--teal-deep); text-align: center;
+    }
+    .dashboard { padding: 16px 28px 32px; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .bento {
+      display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px;
+      align-items: stretch;
+    }
+    .card {
+      background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 22px; box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px;
+    }
+    .card-title strong {
+      font-size: 0.95rem; color: var(--text); text-transform: none;
+      letter-spacing: 0; display: block; margin-top: 2px; font-weight: 600;
+    }
+    /* row 1–2 同 v2 */
+    .hero {
+      grid-column: span 7; grid-row: span 2; padding: 24px 28px;
+      background: linear-gradient(135deg, #fff 0%, #f0fdfa 55%, #fff 100%);
+      border-color: rgba(20,184,166,0.2);
+      box-shadow: 0 4px 32px rgba(20,184,166,0.12);
+    }
+    .hero-label { font-size: 0.75rem; color: var(--teal-dark); font-weight: 600; margin-bottom: 8px; }
+    .hero h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.35; margin-bottom: 10px; }
+    .hero-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .hero-tag {
+      display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 600; background: rgba(20,184,166,0.12);
+      color: var(--teal-dark); border: 1px solid rgba(20,184,166,0.35);
+    }
+    .score-primary {
+      grid-column: span 5; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+    }
+    .donut-wrap { position: relative; width: 160px; height: 160px; margin: 4px 0 8px; }
+    .donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .score-num { font-size: 2.75rem; font-weight: 800; line-height: 1; }
+    .score-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .badge {
+      display: inline-block; padding: 5px 14px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600; margin-top: 6px;
+    }
+    .badge-medium {
+      background: rgba(234,179,8,0.12); color: #ca8a04; border: 1px solid rgba(234,179,8,0.4);
+    }
+    .metric { grid-column: span 2; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; }
+    .metric.status { grid-column: span 3; }
+    .metric-value { font-size: 1.35rem; font-weight: 700; color: var(--teal-dark); }
+    .metric-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+      padding: 8px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+      background: rgba(234,179,8,0.1); color: #ca8a04; border: 1px solid rgba(234,179,8,0.35);
+    }
+    .status-chip::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%; background: #eab308;
+    }
+    .chart-bars { grid-column: span 5; }
+    .chart-trend { grid-column: span 7; }
+    .bar-item { display: flex; align-items: center; margin-bottom: 9px; }
+    .bar-label { width: 72px; font-size: 0.78rem; color: var(--text-muted); text-align: right; margin-right: 10px; }
+    .bar-track { flex: 1; height: 22px; background: #f3f4f6; border-radius: 6px; position: relative; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; }
+    .bar-value {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .trend-box { height: 150px; }
+    .trend-box svg { width: 100%; height: 100%; display: block; }
+
+    /* row 3: 雷达 + 热力 6+6，底边对齐 */
+    .bento-charts-row {
+      align-items: stretch;
+    }
+    .bento-charts-row > .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .chart-radar { grid-column: span 6; }
+    .chart-heatmap { grid-column: span 6; }
+    .bento-charts-row .card-title {
+      flex-shrink: 0;
+    }
+    .bento-charts-row .chart-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+    }
+    .radar-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+    .radar-box svg { width: 200px; height: 200px; }
+    .heatmap-body {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hm-grid {
+      display: grid; grid-template-columns: 56px repeat(5, 1fr); gap: 4px; font-size: 0.72rem;
+    }
+    .hm-year { text-align: center; color: var(--text-dim); padding: 2px 0; }
+    .hm-label {
+      text-align: right; padding-right: 8px; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+    .hm-cell {
+      border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      font-weight: 600; height: 28px;
+    }
+
+    /* row 4: 全宽结论区 */
+    .conclusion-panel {
+      grid-column: span 12;
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+      border-color: rgba(20,184,166,0.25);
+    }
+    .conclusion-inner { padding: 24px 28px 26px; }
+    .conclusion-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .conclusion-heading { flex: 1; min-width: 200px; }
+    .conclusion-heading .label {
+      font-size: 0.75rem; font-weight: 600; color: var(--teal-dark);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .conclusion-heading h2 {
+      font-size: 1.25rem; font-weight: 700; color: var(--text); line-height: 1.3;
+    }
+    .conclusion-status {
+      padding: 8px 18px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+      background: rgba(234,179,8,0.12); color: #ca8a04; border: 1px solid rgba(234,179,8,0.4);
+      white-space: nowrap; align-self: center;
+    }
+    .conclusion-verdict {
+      background: rgba(20,184,166,0.06); border-left: 4px solid var(--teal);
+      border-radius: 0 10px 10px 0; padding: 14px 18px; margin-bottom: 20px;
+      font-size: 0.92rem; color: #374151; line-height: 1.65;
+    }
+    .conclusion-verdict strong { color: var(--text); font-weight: 600; }
+    .conclusion-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .conclusion-block {
+      background: #fff; border: 1px solid #f0f0f0; border-radius: 12px;
+      padding: 16px 18px; min-height: 0;
+    }
+    .conclusion-block-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+      font-size: 0.85rem; font-weight: 700; color: var(--text);
+    }
+    .conclusion-block-head .icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+    }
+    .icon-opportunity { background: rgba(20,184,166,0.12); }
+    .icon-risk { background: rgba(249,115,22,0.12); }
+    .icon-action { background: rgba(59,130,246,0.12); }
+    .conclusion-items { list-style: none; }
+    .conclusion-items li {
+      font-size: 0.84rem; color: #4b5563; line-height: 1.55;
+      padding: 8px 0; border-bottom: 1px solid #f3f4f6;
+      padding-left: 14px; position: relative;
+    }
+    .conclusion-items li::before {
+      content: ""; position: absolute; left: 0; top: 14px;
+      width: 5px; height: 5px; border-radius: 50%; background: var(--teal);
+    }
+    .conclusion-block.risk .conclusion-items li::before { background: #f97316; }
+    .conclusion-block.action .conclusion-items li::before { background: #3b82f6; }
+    .conclusion-items li:last-child { border-bottom: none; padding-bottom: 0; }
+    .conclusion-items li:first-child { padding-top: 0; }
+    .conclusion-items li:first-child::before { top: 6px; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .hero, .score-primary, .metric, .metric.status,
+      .chart-bars, .chart-trend, .chart-radar, .chart-heatmap,
+      .conclusion-panel { grid-column: span 12; }
+      .hero { grid-row: span 1; }
+      .conclusion-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-brand">Patent<span>Pilot</span></div>
+      <button type="button" class="new-btn">+ New Analysis</button>
+      <div class="section-title">Mode</div>
+      <div class="mode-item active">💡 Idea Mode</div>
+      <div class="mode-item">🔬 Research Mode</div>
+      <div class="sidebar-footer">AI-Powered Patent Navigation</div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <a href="#" class="back-btn">← 返回输入</a>
+          <h2 class="topbar-title">分析结果<span>AI 智能垃圾分类机器人</span></h2>
+        </div>
+        <span class="mode-pill">💡 Idea Mode</span>
+      </header>
+
+      <p class="preview-banner">
+        v3 布局预览 · 第三行雷达/热力图底边对齐（6+6）· 第四行全宽结论区
+      </p>
+
+      <div class="dashboard">
+        <div class="bento">
+          <!-- 第一、二行（与 v2 相同） -->
+          <article class="card hero">
+            <p class="hero-label">分析主题</p>
+            <h1>AI 智能垃圾分类机器人</h1>
+            <p class="hero-desc">
+              基于计算机视觉和机械臂控制技术，实现垃圾自动识别与分类处理。系统采用深度学习模型进行物体识别，
+              结合多传感器融合技术提高分类准确率，适用于社区、商场等公共场所。
+            </p>
+            <span class="hero-tag">人工智能 + 环保技术</span>
+          </article>
+
+          <article class="card score-primary">
+            <p class="card-title">可行性评估</p>
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="11"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#eab308" stroke-width="11"
+                  stroke-dasharray="195.6 251.2" stroke-linecap="round"/>
+              </svg>
+              <div class="donut-center">
+                <span class="score-num">78</span>
+                <span class="score-sub">专利潜力 / 100</span>
+              </div>
+            </div>
+            <span class="badge badge-medium">中等潜力</span>
+          </article>
+
+          <article class="card metric">
+            <p class="card-title">竞争密度</p>
+            <span class="metric-value">中等</span>
+            <span class="metric-label">创新拥挤度评估</span>
+          </article>
+          <article class="card metric status">
+            <p class="card-title">申请建议</p>
+            <span class="status-chip">谨慎申请</span>
+            <span class="metric-label">综合评分与风险</span>
+          </article>
+
+          <article class="card chart-bars">
+            <p class="card-title">数据洞察<strong>技术领域分布</strong></p>
+            <div class="bar-item">
+              <span class="bar-label">人工智能</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:35%;background:#14b8a6;"></div>
+                <span class="bar-value">35%</span>
+              </div>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">机械工程</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:28%;background:#0d9488;"></div>
+                <span class="bar-value">28%</span>
+              </div>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">环保技术</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:20%;background:#0f766e;"></div>
+                <span class="bar-value">20%</span>
+              </div>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">电子通信</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:12%;background:#115e59;"></div>
+                <span class="bar-value">12%</span>
+              </div>
+            </div>
+            <div class="bar-item">
+              <span class="bar-label">生物医药</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:5%;background:#134e4a;"></div>
+                <span class="bar-value">5%</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card chart-trend">
+            <p class="card-title">趋势<strong>该领域专利增长</strong></p>
+            <div class="trend-box">
+              <svg viewBox="0 0 400 160">
+                <defs>
+                  <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.22"/>
+                    <stop offset="100%" stop-color="#14b8a6" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M 40 120 Q 120 100 160 80 T 280 50 T 360 20 L 360 140 L 40 140 Z" fill="url(#g)"/>
+                <path d="M 40 120 Q 120 100 160 80 T 280 50 T 360 20" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
+                <text x="40" y="145" font-size="11" fill="#9ca3af" text-anchor="middle">2021</text>
+                <text x="130" y="145" font-size="11" fill="#9ca3af" text-anchor="middle">2022</text>
+                <text x="220" y="145" font-size="11" fill="#9ca3af" text-anchor="middle">2023</text>
+                <text x="310" y="145" font-size="11" fill="#9ca3af" text-anchor="middle">2024</text>
+              </svg>
+            </div>
+          </article>
+        </div>
+
+        <!-- 第三行：仅图表，等高不拉伸 -->
+        <div class="bento bento-charts-row" style="margin-top:14px;">
+          <article class="card chart-radar">
+            <p class="card-title">竞争<strong>态势分析</strong></p>
+            <div class="chart-body">
+              <div class="radar-box">
+              <svg viewBox="0 0 200 200">
+                <g transform="translate(100,100)">
+                  <polygon points="0,-80 76,-25 47,65 -47,65 -76,-25" fill="none" stroke="#e5e7eb"/>
+                  <polygon points="0,-60 57,-19 35,49 -35,49 -57,-19" fill="none" stroke="#e5e7eb"/>
+                  <polygon points="0,-40 38,-13 24,32 -24,32 -38,-13" fill="none" stroke="#e5e7eb"/>
+                  <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb"/>
+                  <line x1="0" y1="0" x2="76" y2="-25" stroke="#e5e7eb"/>
+                  <line x1="0" y1="0" x2="47" y2="65" stroke="#e5e7eb"/>
+                  <line x1="0" y1="0" x2="-47" y2="65" stroke="#e5e7eb"/>
+                  <line x1="0" y1="0" x2="-76" y2="-25" stroke="#e5e7eb"/>
+                  <polygon points="0,-68 53,-18 42,59 -23,47 -46,-15" fill="rgba(20,184,166,0.15)" stroke="#14b8a6" stroke-width="2"/>
+                  <text x="0" y="-92" font-size="9" fill="#6b7280" text-anchor="middle">创新性</text>
+                  <text x="88" y="-28" font-size="9" fill="#6b7280">技术成熟度</text>
+                  <text x="52" y="78" font-size="9" fill="#6b7280">市场需求</text>
+                  <text x="-52" y="78" font-size="9" fill="#6b7280" text-anchor="end">竞争密度</text>
+                  <text x="-88" y="-28" font-size="9" fill="#6b7280" text-anchor="end">法律风险</text>
+                </g>
+              </svg>
+              </div>
+            </div>
+          </article>
+
+          <article class="card chart-heatmap">
+            <p class="card-title">布局<strong>主要申请人专利热力图</strong></p>
+            <div class="chart-body">
+              <div class="heatmap-body">
+            <div class="hm-grid">
+              <div></div>
+              <div class="hm-year">2021</div><div class="hm-year">2022</div><div class="hm-year">2023</div>
+              <div class="hm-year">2024</div><div class="hm-year">2025</div>
+              <div class="hm-label">腾讯</div>
+              <div class="hm-cell" style="background:#d1fae5;color:#065f46;">12</div>
+              <div class="hm-cell" style="background:#a7f3d0;color:#065f46;">18</div>
+              <div class="hm-cell" style="background:#6ee7b7;color:#fff;">25</div>
+              <div class="hm-cell" style="background:#34d399;color:#fff;">35</div>
+              <div class="hm-cell" style="background:#10b981;color:#fff;">48</div>
+              <div class="hm-label">华为</div>
+              <div class="hm-cell" style="background:#d1fae5;color:#065f46;">15</div>
+              <div class="hm-cell" style="background:#a7f3d0;color:#065f46;">22</div>
+              <div class="hm-cell" style="background:#6ee7b7;color:#fff;">32</div>
+              <div class="hm-cell" style="background:#34d399;color:#fff;">45</div>
+              <div class="hm-cell" style="background:#059669;color:#fff;">60</div>
+              <div class="hm-label">阿里</div>
+              <div class="hm-cell" style="background:#ecfdf5;color:#065f46;">10</div>
+              <div class="hm-cell" style="background:#d1fae5;color:#065f46;">15</div>
+              <div class="hm-cell" style="background:#a7f3d0;color:#065f46;">22</div>
+              <div class="hm-cell" style="background:#6ee7b7;color:#fff;">30</div>
+              <div class="hm-cell" style="background:#34d399;color:#fff;">42</div>
+              <div class="hm-label">百度</div>
+              <div class="hm-cell" style="background:#ecfdf5;color:#065f46;">8</div>
+              <div class="hm-cell" style="background:#d1fae5;color:#065f46;">14</div>
+              <div class="hm-cell" style="background:#a7f3d0;color:#065f46;">20</div>
+              <div class="hm-cell" style="background:#6ee7b7;color:#fff;">28</div>
+              <div class="hm-cell" style="background:#34d399;color:#fff;">38</div>
+              <div class="hm-label">小米</div>
+              <div class="hm-cell" style="background:#f0fdf4;color:#065f46;">5</div>
+              <div class="hm-cell" style="background:#ecfdf5;color:#065f46;">10</div>
+              <div class="hm-cell" style="background:#d1fae5;color:#065f46;">16</div>
+              <div class="hm-cell" style="background:#a7f3d0;color:#065f46;">24</div>
+              <div class="hm-cell" style="background:#6ee7b7;color:#fff;">35</div>
+            </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- 第四行：全宽报告结论区 -->
+        <div class="bento" style="margin-top:14px;">
+          <article class="card conclusion-panel">
+            <div class="conclusion-inner">
+              <div class="conclusion-header">
+                <div class="conclusion-heading">
+                  <p class="label">Report Conclusion</p>
+                  <h2>📋 分析结论与建议</h2>
+                </div>
+                <span class="conclusion-status">谨慎申请</span>
+              </div>
+
+              <div class="conclusion-verdict">
+                <strong>综合结论：</strong>
+                该项目在视觉识别与机械控制结合方面具备一定创新空间，但核心算法与分拣结构领域专利布局较密。
+                建议在明确差异化技术点后再推进申请，优先围绕多传感器融合与特定场景适配形成权利要求保护。
+              </div>
+
+              <div class="conclusion-grid">
+                <div class="conclusion-block">
+                  <div class="conclusion-block-head">
+                    <span class="icon icon-opportunity">🎯</span>
+                    突破方向
+                  </div>
+                  <ul class="conclusion-items">
+                    <li>强化视觉识别模型在复杂光照、遮挡条件下的泛化能力，覆盖更多垃圾类别与形态。</li>
+                    <li>结合多光谱 / 近红外传感，提升湿垃圾、有害垃圾与可回收物的区分准确率。</li>
+                  </ul>
+                </div>
+                <div class="conclusion-block risk">
+                  <div class="conclusion-block-head">
+                    <span class="icon icon-risk">⚠️</span>
+                    风险提示
+                  </div>
+                  <ul class="conclusion-items">
+                    <li>机械臂抓取与分拣结构在头部申请人中已有较多相似专利，需避免权利要求过于宽泛。</li>
+                    <li>深度学习分类模型属于热门方向，审查员可能援引现有视觉识别类专利作为对比文件。</li>
+                  </ul>
+                </div>
+                <div class="conclusion-block action">
+                  <div class="conclusion-block-head">
+                    <span class="icon icon-action">✅</span>
+                    下一步行动
+                  </div>
+                  <ul class="conclusion-items">
+                    <li>检索并绘制竞品在「机械臂 + 视觉分拣」方向的权利要求树，确定可规避设计空间。</li>
+                    <li>在权利要求中突出场景化创新点（如社区/商场部署、多桶联动调度），形成实施例支撑。</li>
+                    <li>可考虑将核心算法与硬件结构分案申请，降低单一审查意见导致的全案风险。</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
