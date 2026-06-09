@@ -5,8 +5,6 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from src.config import get_deepseek_api_key
-
 SPLASH_HTML_PATH = Path(__file__).parent / "web" / "patentpilot_splash.html"
 # 开场主内容区距视口顶部的距离（vh）；通过 fixed 定位生效
 SPLASH_TOP_OFFSET_VH = 33
@@ -1204,15 +1202,6 @@ def main() -> None:
             unsafe_allow_html=True,
         )
 
-        api_key = get_deepseek_api_key()
-        with st.expander("⚙️ Settings"):
-            api_key = st.text_input(
-                "DeepSeek API Key",
-                value=api_key,
-                type="password",
-                help="本地用 .env；Streamlit Cloud 在 App Settings → Secrets 配置",
-            )
-
     has_result = ("idea_result" in st.session_state) or ("research_result" in st.session_state)
     progress_overlay = st.empty()
 
@@ -1311,7 +1300,7 @@ def main() -> None:
                         from src.ui.analysis_progress import run_with_progress
 
                         def _call_analyzer() -> dict:
-                            analyzer = PatentAnalyzer(api_key=api_key or None)
+                            analyzer = PatentAnalyzer()
                             if is_idea_mode:
                                 return analyzer.analyze_idea(content)
                             return analyzer.analyze_research(content)

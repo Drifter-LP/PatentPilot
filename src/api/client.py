@@ -15,8 +15,7 @@ class DeepSeekClient:
     def chat(self, system_prompt: str, user_prompt: str) -> str:
         if not self.api_key:
             raise ValueError(
-                "未配置 API Key，请在 Streamlit Secrets、侧边栏 Settings "
-                "或环境变量 DEEPSEEK_API_KEY 中设置。"
+                "未配置 API Key，请在 Streamlit Secrets 或环境变量 DEEPSEEK_API_KEY 中设置。"
             )
 
         payload: dict[str, Any] = {
