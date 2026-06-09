@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 
 SPLASH_HTML_PATH = Path(__file__).parent / "web" / "patentpilot_splash.html"
 # 开场主内容区距视口顶部的距离（vh）；通过 fixed 定位生效
-SPLASH_TOP_OFFSET_VH = 33
+SPLASH_TOP_OFFSET_VH = 29
 st.set_page_config(
     page_title="PatentPilot",
     page_icon="🧭",
@@ -54,6 +54,14 @@ body {
     animation: splashFadeInUp 1s ease-out 0.2s both !important;
 }
 .slogan {
+    font-size: 1.35rem !important;
+    line-height: 1.55 !important;
+    color: #6b7280 !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    max-width: 640px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     opacity: 1 !important;
     margin-bottom: 0 !important;
     animation: splashFadeInUp 1s ease-out 0.6s both !important;
@@ -92,6 +100,7 @@ def render_splash_page() -> None:
         }
 
         .stApp:has(.pp-splash-mode) .st-key-splash_stack,
+        .stApp:has(.pp-splash-mode) .st-key-splash_footer,
         .stApp:has(.pp-splash-mode) .pp-splash-footer {
             transition: opacity 0.4s ease !important;
         }
@@ -221,7 +230,7 @@ def render_splash_page() -> None:
         iframe[title="streamlit_components_v1.components.html"],
         iframe[title="st.iframe"] {
             width: 100%;
-            height: 190px;
+            height: 215px;
             min-height: unset;
             border: none;
             display: block;
@@ -237,6 +246,7 @@ def render_splash_page() -> None:
         .stApp:has(.pp-splash-mode) .st-key-splash_stack {
             gap: 0 !important;
             row-gap: 0 !important;
+            align-items: center !important;
         }
 
         .st-key-splash_get_started {
@@ -334,29 +344,61 @@ def render_splash_page() -> None:
         }
 
         .pp-splash-footer {
-            position: fixed;
-            bottom: 40px;
-            left: 0;
-            right: 0;
+            width: 100%;
+            margin: 0;
+            padding: 0;
             text-align: center;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                'Helvetica Neue', Arial, sans-serif;
+                'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
             font-size: 0.85rem;
+            line-height: 1.55;
             color: #9ca3af;
-            margin: 0;
             pointer-events: none;
-            z-index: 2;
+        }
+
+        .stApp:has(.pp-splash-mode) [data-testid="stVerticalBlock"].st-key-splash_footer,
+        .stApp:has(.pp-splash-mode) .stVerticalBlock.st-key-splash_footer {
+            position: fixed !important;
+            bottom: 40px !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            width: min(640px, calc(100vw - 2rem)) !important;
+            max-width: 640px !important;
+            margin: 0 !important;
+            padding: 0 16px !important;
+            z-index: 10 !important;
+            box-sizing: border-box !important;
+            pointer-events: none !important;
+            text-align: center !important;
+        }
+
+        .stApp:has(.pp-splash-mode) .st-key-splash_footer [data-testid="stElementContainer"],
+        .stApp:has(.pp-splash-mode) .st-key-splash_footer .stMarkdown,
+        .stApp:has(.pp-splash-mode) .st-key-splash_footer [data-testid="stMarkdownContainer"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: center !important;
+            display: block !important;
         }
 
         @media (max-width: 640px) {
             iframe[title="streamlit_components_v1.components.html"],
             iframe[title="st.iframe"] {
-                height: 165px;
+                height: 185px;
             }
 
             .st-key-splash_get_started button {
                 padding: 14px 32px !important;
                 font-size: 0.95rem !important;
+            }
+
+            .stApp:has(.pp-splash-mode) [data-testid="stVerticalBlock"].st-key-splash_footer,
+            .stApp:has(.pp-splash-mode) .stVerticalBlock.st-key-splash_footer {
+                bottom: 24px !important;
+                font-size: 0.78rem;
             }
         }
         </style>
@@ -372,7 +414,7 @@ def render_splash_page() -> None:
 
     with st.container(key="splash_stack"):
         try:
-            components.html(_load_splash_html_for_streamlit(), height=190, scrolling=False)
+            components.html(_load_splash_html_for_streamlit(), height=215, scrolling=False)
         except Exception as exc:
             st.error(f"开场页加载失败：{exc}")
             st.stop()
@@ -387,6 +429,12 @@ def render_splash_page() -> None:
             ):
                 st.session_state.app_started = True
                 st.rerun()
+
+    with st.container(key="splash_footer"):
+        st.markdown(
+            '<p class="pp-splash-footer">面向小白创新者与专业科研人员的专利潜力初筛工具 · 非正式法律意见</p>',
+            unsafe_allow_html=True,
+        )
 
     top_vh = SPLASH_TOP_OFFSET_VH
     mobile_top_vh = max(14, top_vh - 2)
@@ -423,11 +471,6 @@ def render_splash_page() -> None:
         }}
         </style>
         """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<p class="pp-splash-footer">AI-Powered Patent Navigation System</p>',
         unsafe_allow_html=True,
     )
 
@@ -705,6 +748,32 @@ def inject_main_app_styles() -> None:
         section.main:has(.st-key-dashboard_area) [data-testid="stMainBlockContainer"] {
             padding-left: 12px !important;
             padding-right: 12px !important;
+        }
+
+        /* 仪表盘页：左侧栏固定，仅主内容区滚动 */
+        .stApp:has(.st-key-dashboard_area) {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+        }
+        .stApp:has(.st-key-dashboard_area) [data-testid="stSidebar"] {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+        }
+        .stApp:has(.st-key-dashboard_area) [data-testid="stSidebar"] > div:first-child {
+            height: 100% !important;
+            overflow: hidden !important;
+        }
+        .stApp:has(.st-key-dashboard_area) section.main {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        .stApp:has(.st-key-dashboard_area) [data-testid="stMainBlockContainer"] {
+            max-height: none !important;
+            overflow: visible !important;
         }
 
         .st-key-chat_area .stMarkdown:has(.pp-welcome-brand),
@@ -1342,11 +1411,10 @@ def render_research_result(result: dict) -> None:
         st.error("分析结果解析失败")
         st.text_area("原始返回", result.get("raw_response", ""), height=200)
         return
-    from src.ui.dashboard import render_analysis_dashboard
+    from src.ui.research_dashboard import render_research_dashboard
 
-    render_analysis_dashboard(
+    render_research_dashboard(
         result,
-        mode="research",
         topic_input=st.session_state.get("main_input", ""),
         mode_label=st.session_state.get("analysis_mode", RESEARCH_MODE_LABEL),
     )
